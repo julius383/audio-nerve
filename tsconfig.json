@@ -1,6 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "module": "commonjs",
+
+    "target": "ES2018",
+    "outDir": "dist"
   },
-  "files": ["app.ts"],
+  "include": ["src/**/*"]
 }
