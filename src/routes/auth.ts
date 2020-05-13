@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client"
 import { Router, Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
+import logger from "../util/logger";
 
 
 const prisma = new PrismaClient()
@@ -28,6 +29,7 @@ router.post("/register", async (req: Request, res: Response) => {
         if (err?.meta?.target?.includes("email")) {
             res.status(400).json({ "validation_error": "This email is already taken" })
         } else {
+            logger.error(JSON.stringify(err))
             res.sendStatus(500)
         }
 
@@ -50,6 +52,7 @@ router.post("/login", async (req: Request, res: Response) => {
             res.status(400).json({ 'error': "Incorrect email or password" })
         }
     } catch (err) {
+        logger.error(JSON.stringify(err))
         res.sendStatus(500)
     }
 })
