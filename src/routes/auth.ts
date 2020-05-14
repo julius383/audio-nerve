@@ -1,14 +1,54 @@
 import { PrismaClient } from "@prisma/client"
-import { Router, Request, Response } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
-import logger from "../util/logger";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import jwt from "jsonwebtoken";
 
+import logger from "../util/logger";
 
 const prisma = new PrismaClient()
 const router = Router();
 const ROUNDS = 10;
+const JWT_SECRET = "SECretk3y"
 
+
+passport.use(new LocalStrategy({
+    usernameField: 'email',
+    passwordField: 'password',
+},
+    async (email, password, done) => {
+        try {
+            const user = await prisma.user.findOne({ where: { email } })
+            if (user !== null) {
+                const isSamePassword = await bcrypt.compare(password, user.password);
+                if (isSamePassword) {
+                    done(null, user)
+                } else {
+                    done(null, false, { message: 'Incorrect email or password' });
+                }
+            } else {
+                done(null, false, { message: "Account does not exist" })
+            }
+        } catch (err) {
+            logger.error(JSON.stringify(err))
+            done(err)
+        }
+    }
+))
+
+const generateJWT = (email: string, id: string): string => {
+    const now = new Date();
+    const expiresIn = new Date(now)
+    expiresIn.setDate(now.getDate() + 7)
+    return jwt.sign({
+        id,
+        email,
+        exp: expiresIn.getTime() / 1000,
+        iat: now.getTime() / 1000
+    }, JWT_SECRET)
+}
 
 router.post("/register", async (req: Request, res: Response) => {
     const { name, email, password } = req.body
@@ -37,24 +77,27 @@ router.post("/register", async (req: Request, res: Response) => {
 
 })
 
-router.post("/login", async (req: Request, res: Response) => {
-    const { email, password } = req.body
-    try {
-        const user = await prisma.user.findOne({ where: { email } })
-        if (password !== undefined && user !== null) {
-            const isSamePassword = await bcrypt.compare(password, user.password);
-            if (isSamePassword) {
-                res.json({ user })
-            } else {
-                res.status(400).json({ 'error': "Incorrect email or password" })
-            }
-        } else {
-            res.status(400).json({ 'error': "Incorrect email or password" })
-        }
-    } catch (err) {
-        logger.error(JSON.stringify(err))
-        res.sendStatus(500)
+router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
+    if (!email) {
+        res.status(400).json({
+            error: "Email is required"
+        })
+    } else if (!password) {
+        res.status(400).json({
+            error: "Password is required"
+        })
     }
+    return passport.authenticate('local', { session: false }, async (err, user, info) => {
+        if (err) {
+            res.sendStatus(500)
+        } else if (user) {
+            const token = generateJWT(user.email, user.id)
+            res.json({ token })
+        } else {
+            res.status(400).json({ error: info })
+        }
+    })(req, res, next)
 })
 
 router.post("/logout", (_req: Request, res: Response) => {
