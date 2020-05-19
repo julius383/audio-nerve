@@ -16,10 +16,17 @@ import logger from "../util/logger";
 const prisma = new PrismaClient();
 const router = Router();
 const ROUNDS = 10;
-const JWT_SECRET = "SECretk3y";
+const TOKEN_SECRET = "SECretk3y";
+const REFRESH_SECRET = "R3FR3$# SecRe+";
 const TOKEN_EXP = 60 * 15;
+const REFRESH_EXP = 60 * 60 * 24 * 14;
 
-const generateJWT = (email: string, id: string, expSec: number): string => {
+const generateJWT = (
+  email: string,
+  id: string,
+  expSec: number,
+  TOKEN: string
+): string => {
   const now = new Date();
   const exp = new Date(now);
   exp.setSeconds(now.getSeconds() + expSec);
@@ -30,7 +37,7 @@ const generateJWT = (email: string, id: string, expSec: number): string => {
       exp: exp.getTime() / 1000,
       iat: now.getTime() / 1000,
     },
-    JWT_SECRET
+    TOKEN
   );
 };
 
@@ -100,8 +107,16 @@ router.post("/login", async (req: Request, res: Response) => {
     if (user !== null) {
       const isSamePassword = await bcrypt.compare(password, user.password);
       if (isSamePassword) {
-        const token = generateJWT(user.email, user.id, TOKEN_EXP);
-        res.json({ token });
+        const token = generateJWT(user.email, user.id, TOKEN_EXP, TOKEN_SECRET);
+        res.json({
+          token,
+          refreshToken: generateJWT(
+            user.email,
+            user.id,
+            REFRESH_EXP,
+            REFRESH_SECRET
+          ),
+        });
       } else {
         res.status(400).json({ error: "Incorrect email or password" });
       }
@@ -120,7 +135,7 @@ router.post("/logout", (_req: Request, res: Response) => {
 
 router.get(
   "/user",
-  expressJwt({ secret: JWT_SECRET, getToken }),
+  expressJwt({ secret: TOKEN_SECRET, getToken }),
   async (req: Request, res: Response) => {
     const { user: token } = (req as object) as DecodedToken;
     if (token) {
@@ -132,6 +147,32 @@ router.get(
           name: user.name,
           email: user.email,
         });
+      } else {
+        res.status(401).json({ error: "Invalid token" });
+      }
+    } else {
+      res.sendStatus(400);
+    }
+  }
+);
+
+router.get(
+  "/refresh",
+  expressJwt({ secret: REFRESH_SECRET, getToken }),
+  async (req: Request, res: Response) => {
+    const { user: token } = (req as object) as DecodedToken;
+    if (token) {
+      const user = await prisma.user.findOne({
+        where: { email: token.email },
+      });
+      if (user != null) {
+        const newToken = generateJWT(
+          user.email,
+          user.id,
+          TOKEN_EXP,
+          TOKEN_SECRET
+        );
+        res.json({ token: newToken });
       } else {
         res.status(401).json({ error: "Invalid token" });
       }
