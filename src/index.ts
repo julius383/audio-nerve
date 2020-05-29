@@ -5,6 +5,9 @@ import express, {
   NextFunction,
 } from "express";
 import bodyParser from "body-parser";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 import logger from "./util/logger";
 import { router as authRouter } from "./routes/auth";

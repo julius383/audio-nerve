@@ -10,10 +10,16 @@ import logger from "../util/logger";
 const prisma = new PrismaClient();
 const router = Router();
 const ROUNDS = 10;
-const TOKEN_SECRET = "SECretk3y";
-const REFRESH_SECRET = "R3FR3$# SecRe+";
+const TOKEN_SECRET = process.env.TOKEN_SECRET;
+const REFRESH_SECRET = process.env.REFRESH_SECRET;
 const TOKEN_EXP = 60 * 15;
 const REFRESH_EXP = 60 * 60 * 24 * 14;
+
+if (TOKEN_SECRET === undefined) {
+  throw new Error("TOKEN_SECRET has not been set");
+} else if (REFRESH_SECRET === undefined) {
+  throw new Error("REFRESH_TOKEN has not been set");
+}
 
 const generateJWT = (
   email: string,
