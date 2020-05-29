@@ -1,6 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "target": "ES2018",
+    "outDir": "dist",
+    "strict": true,
+    "lib": ["ES2018"],
+    "module": "commonjs",
+    "esModuleInterop": true
   },
-  "files": ["app.ts"],
+  "include": ["src/**/*"]
 }
