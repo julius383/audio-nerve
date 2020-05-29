@@ -11,6 +11,8 @@ dotenv.config();
 
 import logger from "./util/logger";
 import { router as authRouter } from "./routes/auth";
+import { router as searchRouter } from "./routes/search";
+import { MulterError } from "multer";
 
 const PORT: string = process.env.PORT || "8000";
 
@@ -22,6 +24,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api", authRouter);
+app.use("/api", searchRouter);
 
 interface ErrorObj {
   name: string;
@@ -41,6 +44,13 @@ app.use(
       const errorMsg =
         errorObj.message === "jwt expired" ? "Expired token" : "Invalid token";
       res.status(401).json({ error: errorMsg });
+    } else if (err instanceof MulterError) {
+      if (err.name === "Unexpected field") {
+        res.status(400).json({ error: "Invalid upload format" });
+      } else {
+        logger.error(`Multer error => ${err.message}`);
+        res.sendStatus(400);
+      }
     }
   }
 );
