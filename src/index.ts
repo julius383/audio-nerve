@@ -1,4 +1,9 @@
-import express from "express";
+import express, {
+  ErrorRequestHandler,
+  Request,
+  Response,
+  NextFunction,
+} from "express";
 import bodyParser from "body-parser";
 
 import logger from "./util/logger";
@@ -13,7 +18,29 @@ app.get("/", (req, res) => {
   res.send("Hello from Audio Nerve");
 });
 
-app.use("/api/auth", authRouter);
+app.use("/api", authRouter);
+
+interface ErrorObj {
+  name: string;
+  message: string;
+}
+
+app.use(
+  (
+    err: ErrorRequestHandler,
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    logger.debug(JSON.stringify(err));
+    if (err.name === "UnauthorizedError") {
+      const errorObj = (err as object) as ErrorObj;
+      const errorMsg =
+        errorObj.message === "jwt expired" ? "Expired token" : "Invalid token";
+      res.status(401).json({ error: errorMsg });
+    }
+  }
+);
 
 app.listen(PORT, () => {
   logger.debug(`Started app on http://localhost:${PORT}`);

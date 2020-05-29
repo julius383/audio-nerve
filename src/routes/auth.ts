@@ -1,11 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import {
-  Router,
-  Request,
-  Response,
-  NextFunction,
-  ErrorRequestHandler,
-} from "express";
+import { Router, Request, Response } from "express";
 import expressJwt from "express-jwt";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
@@ -41,7 +35,7 @@ const generateJWT = (
   );
 };
 
-const getToken = (req: Request): string | null => {
+export const getTokenFromHeader = (req: Request): string | null => {
   if (
     req.headers.authorization &&
     req.headers.authorization.split(" ")[0] === "Bearer"
@@ -53,11 +47,6 @@ const getToken = (req: Request): string | null => {
 
 interface DecodedToken {
   user: { id: string; email: string };
-}
-
-interface ErrorObj {
-  name: string;
-  message: string;
 }
 
 router.post("/register", async (req: Request, res: Response) => {
@@ -135,7 +124,7 @@ router.post("/logout", (_req: Request, res: Response) => {
 
 router.get(
   "/user",
-  expressJwt({ secret: TOKEN_SECRET, getToken }),
+  expressJwt({ secret: TOKEN_SECRET, getTokenFromHeader }),
   async (req: Request, res: Response) => {
     const { user: token } = (req as object) as DecodedToken;
     if (token) {
@@ -158,7 +147,7 @@ router.get(
 
 router.get(
   "/refresh",
-  expressJwt({ secret: REFRESH_SECRET, getToken }),
+  expressJwt({ secret: REFRESH_SECRET, getTokenFromHeader }),
   async (req: Request, res: Response) => {
     const { user: token } = (req as object) as DecodedToken;
     if (token) {
@@ -178,23 +167,6 @@ router.get(
       }
     } else {
       res.sendStatus(400);
-    }
-  }
-);
-
-router.use(
-  (
-    err: ErrorRequestHandler,
-    _req: Request,
-    res: Response,
-    _next: NextFunction
-  ) => {
-    logger.debug(JSON.stringify(err));
-    if (err.name === "UnauthorizedError") {
-      const errorObj = (err as object) as ErrorObj;
-      const errorMsg =
-        errorObj.message === "jwt expired" ? "Expired token" : "Invalid token";
-      res.status(401).json({ error: errorMsg });
     }
   }
 );
