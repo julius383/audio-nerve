@@ -1,3 +1,5 @@
+import fs from "fs";
+
 import express, {
   ErrorRequestHandler,
   Request,
@@ -15,6 +17,15 @@ import { router as searchRouter } from "./routes/search";
 import { MulterError } from "multer";
 
 const PORT: string = process.env.PORT || "8000";
+const UPLOAD_DIR = process.env.UPLOAD_DIR;
+
+if (UPLOAD_DIR !== undefined) {
+  if (!fs.existsSync(UPLOAD_DIR)) {
+    logger.debug(`UPLOAD_DIR does not exist. Creating directory...`);
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    logger.debug(`UPLOAD_DIR directory created`);
+  }
+}
 
 const app = express();
 app.use(bodyParser.json());
