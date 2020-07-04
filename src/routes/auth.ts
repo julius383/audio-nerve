@@ -63,26 +63,27 @@ router.post("/register", async (req: Request, res: Response) => {
     res.status(400).json({ error: "Email is required" });
   } else if (!password) {
     res.status(400).json({ error: "Password is required" });
-  }
-  try {
-    const hashPassword = await bcrypt.hash(password, ROUNDS);
-    const isExistingEmail = await prisma.user.findOne({ where: { email } });
-    if (isExistingEmail) {
-      res.status(400).json({ error: "This email is already taken" });
-    } else {
-      await prisma.user.create({
-        data: {
-          id: uuidv4(),
-          name,
-          email,
-          password: hashPassword,
-        },
-      });
-      res.status(201).json({ msg: "User created successfully" });
+  } else {
+    try {
+      const hashPassword = await bcrypt.hash(password, ROUNDS);
+      const isExistingEmail = await prisma.user.findOne({ where: { email } });
+      if (isExistingEmail) {
+        res.status(400).json({ error: "This email is already taken" });
+      } else {
+        await prisma.user.create({
+          data: {
+            id: uuidv4(),
+            name,
+            email,
+            password: hashPassword,
+          },
+        });
+        res.status(201).json({ msg: "User created successfully" });
+      }
+    } catch (err) {
+      logger.error(JSON.stringify(err));
+      res.sendStatus(500);
     }
-  } catch (err) {
-    logger.error(JSON.stringify(err));
-    res.sendStatus(500);
   }
 });
 
@@ -96,31 +97,37 @@ router.post("/login", async (req: Request, res: Response) => {
     res.status(400).json({
       error: "Password is required",
     });
-  }
-  try {
-    const user = await prisma.user.findOne({ where: { email } });
-    if (user !== null) {
-      const isSamePassword = await bcrypt.compare(password, user.password);
-      if (isSamePassword) {
-        const token = generateJWT(user.email, user.id, TOKEN_EXP, TOKEN_SECRET);
-        res.json({
-          token,
-          refreshToken: generateJWT(
+  } else {
+    try {
+      const user = await prisma.user.findOne({ where: { email } });
+      if (user !== null) {
+        const isSamePassword = await bcrypt.compare(password, user.password);
+        if (isSamePassword) {
+          const token = generateJWT(
             user.email,
             user.id,
-            REFRESH_EXP,
-            REFRESH_SECRET
-          ),
-        });
+            TOKEN_EXP,
+            TOKEN_SECRET
+          );
+          res.json({
+            token,
+            refreshToken: generateJWT(
+              user.email,
+              user.id,
+              REFRESH_EXP,
+              REFRESH_SECRET
+            ),
+          });
+        } else {
+          res.status(400).json({ error: "Incorrect email or password" });
+        }
       } else {
-        res.status(400).json({ error: "Incorrect email or password" });
+        res.status(400).json({ error: "Account does not exist" });
       }
-    } else {
-      res.status(400).json({ error: "Account does not exist" });
+    } catch (err) {
+      logger.error(JSON.stringify(err));
+      res.sendStatus(500);
     }
-  } catch (err) {
-    logger.error(JSON.stringify(err));
-    res.sendStatus(500);
   }
 });
 
