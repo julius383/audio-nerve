@@ -39,10 +39,6 @@ const upload = multer({
   storage,
 });
 
-// exec(`fpcalc -raw -plain ${infile}`, (err, stdout, stderr) => {
-// // const qstring = `{${stdout}}`;
-
-// });
 router.post(
   "/search",
   upload.single("snippet"),
@@ -65,7 +61,9 @@ router.post(
             if (results.length === 0) {
               res.sendStatus(404);
             } else if (results.length === 1) {
-              logger.debug("Only one found...returning");
+              logger.debug(
+                `Only one found...returning: ${results[0].musicbrainzId}`
+              );
               res.status(200).json(results[0].musicbrainzId);
             } else {
               logger.debug("Multiple found...comparing");
@@ -89,10 +87,10 @@ router.post(
             }
           } catch (e) {
             logger.error(e.message);
+            res.sendStatus(500);
           }
         }
       );
-      // const qstring = "'{-462224921,1685271399,1685201423}'";
     } else {
       res.sendStatus(400);
     }
