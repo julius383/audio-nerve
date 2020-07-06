@@ -31,9 +31,7 @@
     "eslint-plugin-prettier": "^3.1.4",
     "nodemon": "^2.0.4",
     "prettier": "^2.0.5",
-    "to": "^0.2.9",
     "tslint": "^6.1.2",
-    "update": "^0.7.4"
   },
   "dependencies": {
     "@prisma/client": "^2.0.1",
