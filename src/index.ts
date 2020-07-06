@@ -66,6 +66,6 @@ app.use(
   }
 );
 
-app.listen(PORT, () => {
-  logger.debug(`Started app on http://localhost:${PORT}`);
+app.listen(8000, "0.0.0.0", () => {
+  logger.debug(`Started app on http://0.0.0.0:${PORT}`);
 });

@@ -13,3 +13,10 @@ model User {
   name     String
   password String
 }
+
+model Song {
+  id Int @id
+  acousticId Int @unique
+  musicbrainzId String
+  fingerprint Int[]
+}
