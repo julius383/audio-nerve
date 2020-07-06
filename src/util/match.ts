@@ -14,10 +14,12 @@ function findMatchingPositions(
 ): [number[], number[]] {
   const r1: number[] = [];
   const r2: number[] = [];
+  // console.log(`Length sample ${sample.length}, Length base ${base.length}`);
   base.forEach((val, index) => {
-    if (!_.isUndefined(_.nth(sample, index))) {
-      r1.push(val);
-      r2.push(val);
+    const otherIndex = _.indexOf(sample, val);
+    if (otherIndex > -1) {
+      r1.push(otherIndex);
+      r2.push(index);
     }
   });
   return [r1, r2];
@@ -60,3 +62,5 @@ function compareFingerprints(sample: Fingerprint, base: Fingerprint): number {
   }
   return _.mean(diffs);
 }
+
+export default compareFingerprints;
