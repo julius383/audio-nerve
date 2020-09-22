@@ -14,7 +14,6 @@ function findMatchingPositions(
 ): [number[], number[]] {
   const r1: number[] = [];
   const r2: number[] = [];
-  // console.log(`Length sample ${sample.length}, Length base ${base.length}`);
   base.forEach((val, index) => {
     const otherIndex = _.indexOf(sample, val);
     if (otherIndex > -1) {

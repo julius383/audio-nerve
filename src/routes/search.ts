@@ -4,6 +4,7 @@ import { PrismaClient, SongGetPayload } from "@prisma/client";
 import multer, { FileFilterCallback } from "multer";
 import logger from "../util/logger";
 import compareFingerprints from "../util/match";
+import fetchMetadata from "../util/metadata";
 
 const prisma = new PrismaClient();
 const UPLOAD_DIR = process.env.UPLOAD_DIR;
@@ -83,7 +84,8 @@ router.post(
               logger.debug(
                 `Found ${results.length} candidates and chose ${answer}`
               );
-              res.json({ msg: answer });
+              const meta = await fetchMetadata(answer);
+              res.json(meta);
             }
           } catch (e) {
             logger.error(e.message);
